@@ -1,19 +1,15 @@
-from flask import Flask, render_template, jsonify
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 import requests
 import json
 from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
 from keras.layers import Dense
 
-# Initialize the Flask app
-app = Flask(__name__)
-
-# Function to build, train and evaluate the neural network model
 def make_neural_network():
     data = get_inrix_data()
 
@@ -24,6 +20,7 @@ def make_neural_network():
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
+    # Standardize features using StandardScaler
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -34,7 +31,7 @@ def make_neural_network():
     model.add(Dense(units=32, activation='relu'))
     model.add(Dense(units=1, activation='linear'))  # 1 output for regression
 
-    # Compile the model (using mean squared error for regression)
+    # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     # Train the model
@@ -46,24 +43,15 @@ def make_neural_network():
     mse = mean_squared_error(y_test, y_pred)
     print(f"Mean Squared Error: {mse}")
 
-    predictions = []
+    # test a new data point
     for i in [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]:
-        x_new = pd.DataFrame([[65, i]], columns=['Average Speed', 'Speed Limit'])
-        x_new_scaled = scaler.transform(x_new)
-        y_new = model.predict(x_new_scaled)
-        predictions.append((i, y_new[0][0]))
-    return predictions
+      x_new = pd.DataFrame([[65, i]], columns = ['Average Speed', 'Speed Limit'])
+      x_new_scaled = scaler.transform(x_new)
+      y_new = model.predict(x_new_scaled)
+      print(i, y_new)
 
-# Flask route to serve the homepage
-@app.route('/')
-def index():
-    return render_template('index.html')
+def main():
+  make_neural_network()
 
-# Flask route to make predictions and return results as JSON
-@app.route('/predict')
-def predict():
-    predictions = make_neural_network()
-    return jsonify(predictions) 
-  
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()
